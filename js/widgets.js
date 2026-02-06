@@ -142,7 +142,7 @@ const WIDGETS = {
     apiKeyName: 'OPENCLAW_API',
     properties: {
       title: 'Auth',
-      endpoint: 'http://localhost:11470/api/status',
+      endpoint: 'http://localhost:18789/api/status',
       refreshInterval: 30
     },
     preview: `<div style="text-align:center;padding:8px;">
