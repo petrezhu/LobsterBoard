@@ -251,9 +251,7 @@ body {
 
 .canvas-wrapper {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   padding: 40px;
   overflow: auto;
   background: 
@@ -268,10 +266,9 @@ body {
   border: 2px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  transform-origin: center;
+  transform-origin: top left;
   transition: transform 0.2s ease;
-  flex-shrink: 0;
-  flex-grow: 0;
+  margin: auto;
 }
 
 .canvas-grid {
