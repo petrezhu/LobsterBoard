@@ -22,13 +22,10 @@ const state = {
 
 // Process widget HTML to conditionally remove header
 function processWidgetHtml(html, showHeader) {
-  console.log('processWidgetHtml called, showHeader:', showHeader);
   if (showHeader !== false) return html;
   // Remove the dash-card-head element (handles multi-line with newlines)
   const headerRegex = /<div\s+class="dash-card-head"[^>]*>[\s\S]*?<\/div>/i;
-  const result = html.replace(headerRegex, '');
-  console.log('Header removed, before length:', html.length, 'after:', result.length);
-  return result;
+  return html.replace(headerRegex, '');
 }
 
 // ─────────────────────────────────────────────
@@ -577,11 +574,7 @@ function initControls() {
     document.getElementById('preview-modal').classList.remove('active');
   });
   
-  // Zoom controls
-  document.getElementById('zoom-in').addEventListener('click', zoomIn);
-  document.getElementById('zoom-out').addEventListener('click', zoomOut);
-  document.getElementById('zoom-fit').addEventListener('click', zoomFit);
-  document.getElementById('zoom-100').addEventListener('click', zoom100);
+  // Zoom controls - handled via inline onclick in HTML
   
   // Keyboard shortcuts for zoom
   document.addEventListener('keydown', (e) => {
@@ -633,7 +626,6 @@ function showPreview() {
     const template = WIDGETS[widget.type];
     if (!template) return '';
     
-    console.log('Preview widget:', widget.id, 'showHeader:', widget.properties.showHeader);
     const props = { ...widget.properties, id: widget.id };
     let html = processWidgetHtml(template.generateHtml(props), widget.properties.showHeader);
     
