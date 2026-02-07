@@ -22,10 +22,13 @@ const state = {
 
 // Process widget HTML to conditionally remove header
 function processWidgetHtml(html, showHeader) {
+  console.log('processWidgetHtml called, showHeader:', showHeader);
   if (showHeader !== false) return html;
   // Remove the dash-card-head element (handles multi-line with newlines)
-  const headerRegex = /<div\s+class="dash-card-head"[^>]*>[\s\S]*?<\/div>/gi;
-  return html.replace(headerRegex, '');
+  const headerRegex = /<div\s+class="dash-card-head"[^>]*>[\s\S]*?<\/div>/i;
+  const result = html.replace(headerRegex, '');
+  console.log('Header removed, before length:', html.length, 'after:', result.length);
+  return result;
 }
 
 // ─────────────────────────────────────────────
