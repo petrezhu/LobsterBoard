@@ -1072,6 +1072,29 @@ body {
   color: var(--accent-blue);
 }
 
+/* World Clock */
+.tz-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tz-row:last-child {
+  border-bottom: none;
+}
+
+.tz-city {
+  color: var(--text-primary);
+}
+
+.tz-time {
+  font-weight: 600;
+  color: var(--accent-blue);
+  font-variant-numeric: tabular-nums;
+}
+
 .usage-row {
   display: flex;
   justify-content: space-between;
