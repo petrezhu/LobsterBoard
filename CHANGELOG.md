@@ -8,6 +8,9 @@ All notable changes to LobsterBoard will be documented in this file.
 
 ### Fixed
 - Text-header widget "Show Border" checkbox now works — toggling it off removes the card background, border, and box-shadow from the `.placed-widget` container
+- Fix text-header, horizontal-line, and vertical-line widgets disappearing after save/reload — unknown widget types (e.g. removed `topbar`) crashed `renderWidget`, stopping all subsequent widgets from loading
+- Add guard in `renderWidget` to skip unknown widget types gracefully
+- Wrap each widget render in try/catch so one bad widget can't prevent others from loading
 
 ---
 

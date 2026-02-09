@@ -202,7 +202,13 @@ async function loadConfig() {
     state.idCounter = state.widgets.reduce((maxId, w) => Math.max(maxId, parseInt(w.id.replace('widget-', ''))), 0);
 
     updateCanvasSize(true); // Preserve zoom on load
-    state.widgets.forEach(renderWidget);
+    state.widgets.forEach(widget => {
+      try {
+        renderWidget(widget);
+      } catch (e) {
+        console.error(`Failed to render widget ${widget.id} (type: ${widget.type}):`, e);
+      }
+    });
     updateCanvasInfo();
     if (state.widgets.length > 0) {
       document.getElementById('canvas').classList.add('has-widgets');
@@ -450,6 +456,10 @@ function createWidget(type, x, y) {
 
 function renderWidget(widget) {
   const template = WIDGETS[widget.type];
+  if (!template) {
+    console.warn(`renderWidget: unknown widget type "${widget.type}" (${widget.id}), skipping`);
+    return;
+  }
   const canvas = document.getElementById('canvas');
 
   const el = document.createElement('div');
