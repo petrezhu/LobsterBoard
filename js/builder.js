@@ -1478,16 +1478,15 @@ function generateServerJs() {
   return `/**
  * LobsterBoard Dashboard Server
  * 
- * A minimal server that:
+ * A server that:
  * - Serves your dashboard static files
- * - Proxies allowed OpenClaw API endpoints
+ * - Provides OpenClaw data via CLI commands (not HTTP proxy)
  * 
  * Usage: node server.js
  * 
  * Environment variables:
- *   PORT          - Server port (default: 8080)
- *   HOST          - Bind address (default: 127.0.0.1 for security)
- *   OPENCLAW_URL  - OpenClaw gateway URL (default: http://localhost:18789)
+ *   PORT - Server port (default: 8080)
+ *   HOST - Bind address (default: 127.0.0.1 for security)
  * 
  * Security: By default binds to localhost only. To expose on network:
  *   HOST=0.0.0.0 node server.js
@@ -1497,12 +1496,10 @@ function generateServerJs() {
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const PORT = process.env.PORT || 8080;
 const HOST = process.env.HOST || '127.0.0.1';
-const OPENCLAW_URL = (process.env.OPENCLAW_URL || 'http://localhost:18789').replace(/\\/$/, '');
-
-const ALLOWED_API_PATHS = ['/api/status', '/api/health', '/api/activity', '/api/cron', '/api/logs', '/api/sessions', '/api/usage/tokens'];
 
 const MIME_TYPES = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
@@ -1510,24 +1507,171 @@ const MIME_TYPES = {
   '.gif': 'image/gif', '.svg': 'image/svg+xml', '.ico': 'image/x-icon'
 };
 
-async function proxyToOpenClaw(reqPath, res) {
+// Cache for expensive CLI operations (30 second TTL)
+let statusCache = { data: null, timestamp: 0 };
+let cronCache = { data: null, timestamp: 0 };
+const CACHE_TTL = 30000;
+
+// Run openclaw CLI command and return output
+function runOpenClawCmd(args) {
   try {
-    const response = await fetch(OPENCLAW_URL + reqPath);
-    const data = await response.text();
-    res.writeHead(response.status, {
-      'Content-Type': response.headers.get('content-type') || 'application/json',
-      'Access-Control-Allow-Origin': '*'
+    return execSync(\`openclaw \${args}\`, { 
+      encoding: 'utf8',
+      timeout: 10000,
+      stdio: ['pipe', 'pipe', 'pipe']
     });
-    res.end(data);
-  } catch (error) {
-    res.writeHead(502, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Failed to reach OpenClaw' }));
+  } catch (e) {
+    console.error(\`openclaw \${args} failed:\`, e.message);
+    return null;
   }
 }
 
+// Parse openclaw status output
+function parseStatus() {
+  const now = Date.now();
+  if (statusCache.data && (now - statusCache.timestamp) < CACHE_TTL) {
+    return statusCache.data;
+  }
+
+  const output = runOpenClawCmd('status');
+  if (!output) return null;
+
+  const versionOutput = runOpenClawCmd('--version');
+  const currentVersion = versionOutput ? versionOutput.trim() : 'unknown';
+
+  const data = {
+    authMode: 'unknown',
+    version: currentVersion,
+    sessions: 0,
+    gateway: 'unknown'
+  };
+
+  // Detect auth mode from status output
+  if (output.includes('oauth') || output.includes('claude-cli')) {
+    data.authMode = 'oauth';
+  } else if (output.includes('api-key') || output.match(/sk-ant-/)) {
+    data.authMode = 'api-key';
+  } else {
+    data.authMode = 'oauth';
+  }
+
+  // Look for version update info
+  const versionMatch = output.match(/npm update ([\\\\d.-]+)/);
+  if (versionMatch) data.latestVersion = versionMatch[1];
+
+  // Look for sessions count
+  const sessionsMatch = output.match(/sessions?\\\\s+(\\\\d+)/i);
+  if (sessionsMatch) data.sessions = parseInt(sessionsMatch[1]);
+
+  // Look for gateway status
+  if (output.includes('running')) data.gateway = 'running';
+
+  statusCache = { data, timestamp: now };
+  return data;
+}
+
+// Parse cron jobs via CLI
+function parseCronJobs() {
+  const now = Date.now();
+  if (cronCache.data && (now - cronCache.timestamp) < CACHE_TTL) {
+    return cronCache.data;
+  }
+
+  const output = runOpenClawCmd('cron list --json');
+  let jobs = [];
+  try {
+    if (output) {
+      const parsed = JSON.parse(output);
+      jobs = parsed.jobs || [];
+    }
+  } catch (e) {
+    console.error('Failed to parse cron jobs:', e.message);
+  }
+
+  const data = { jobs };
+  cronCache = { data, timestamp: now };
+  return data;
+}
+
+// Response helpers
+function sendSuccess(res, data) {
+  res.writeHead(200, { 
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*'
+  });
+  res.end(JSON.stringify({ status: 'ok', data }));
+}
+
+function sendError(res, message, statusCode = 500) {
+  res.writeHead(statusCode, { 
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*'
+  });
+  res.end(JSON.stringify({ status: 'error', message }));
+}
+
+// API handlers
+const API_HANDLERS = {
+  '/api/status': (req, res) => {
+    const data = parseStatus();
+    if (!data) {
+      sendError(res, 'Failed to get OpenClaw status');
+      return;
+    }
+    sendSuccess(res, data);
+  },
+
+  '/api/cron': (req, res) => {
+    const data = parseCronJobs();
+    sendSuccess(res, data);
+  },
+
+  '/api/activity': (req, res) => {
+    // Placeholder - would need session history access
+    sendSuccess(res, {
+      items: [{ text: 'Activity feed coming soon', time: new Date().toISOString() }]
+    });
+  },
+
+  '/api/logs': (req, res) => {
+    // Try to read recent logs from common locations
+    let lines = ['Log viewer coming soon'];
+    const logPaths = [
+      path.join(process.env.HOME || '', '.config/openclaw/logs/gateway.log'),
+      path.join(process.env.HOME || '', 'Library/Logs/openclaw/gateway.log'),
+      '/var/log/openclaw/gateway.log'
+    ];
+
+    for (const logPath of logPaths) {
+      try {
+        if (fs.existsSync(logPath)) {
+          const content = fs.readFileSync(logPath, 'utf8');
+          lines = content.split('\\\\n').slice(-100).filter(l => l.trim());
+          break;
+        }
+      } catch (e) { /* continue to next */ }
+    }
+    sendSuccess(res, { lines });
+  },
+
+  '/api/sessions': (req, res) => {
+    const status = parseStatus();
+    sendSuccess(res, { count: status?.sessions || 0 });
+  }
+};
+
+// Static file server with path traversal protection
 function serveStatic(filePath, res) {
   if (filePath === '/') filePath = '/index.html';
-  const fullPath = path.join(__dirname, filePath);
+  const fullPath = path.resolve(__dirname, '.' + filePath);
+  
+  // Prevent path traversal attacks
+  if (!fullPath.startsWith(path.resolve(__dirname))) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Forbidden');
+    return;
+  }
+  
   const ext = path.extname(fullPath).toLowerCase();
   
   fs.readFile(fullPath, (err, data) => {
@@ -1541,9 +1685,10 @@ function serveStatic(filePath, res) {
   });
 }
 
-const server = http.createServer(async (req, res) => {
+const server = http.createServer((req, res) => {
   const pathname = new URL(req.url, 'http://' + req.headers.host).pathname;
   
+  // CORS preflight
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
@@ -1554,25 +1699,32 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   
-  if (pathname.startsWith('/api/')) {
-    if (ALLOWED_API_PATHS.includes(pathname)) {
-      await proxyToOpenClaw(pathname, res);
-    } else {
-      res.writeHead(403, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'API endpoint not allowed' }));
-    }
+  // API endpoints
+  if (API_HANDLERS[pathname]) {
+    API_HANDLERS[pathname](req, res);
     return;
   }
   
+  // Static files
   serveStatic(pathname, res);
 });
+
+// Graceful shutdown
+process.on('SIGTERM', () => server.close(() => process.exit(0)));
+process.on('SIGINT', () => server.close(() => process.exit(0)));
 
 server.listen(PORT, HOST, () => {
   console.log(\`
 🦞 LobsterBoard Dashboard Server
 
    Dashboard: http://\${HOST}:\${PORT}
-   OpenClaw:  \${OPENCLAW_URL}
+   
+   API Endpoints:
+   • /api/status   - Auth mode & version
+   • /api/cron     - Cron jobs list  
+   • /api/activity - Activity feed
+   • /api/logs     - System logs
+   • /api/sessions - Session count
    
 \${HOST === '127.0.0.1' ? '   ✓ Bound to localhost (secure)' : '   ⚠️  Exposed to network'}
 
@@ -1612,9 +1764,9 @@ Hey [Your AI Assistant], please review the server.js file in this folder
 and check for any security concerns, suspicious code, or potential issues.
 \`\`\`
 
-The server.js included here is minimal and only proxies specific read-only 
-OpenClaw endpoints (\`/api/status\`, \`/api/health\`). It binds to localhost 
-by default for security. But always verify for yourself!
+The server.js included here uses the OpenClaw CLI to query data locally
+(no network proxying). It binds to localhost by default for security. 
+But always verify for yourself!
 
 ---
 
@@ -1622,11 +1774,14 @@ by default for security. But always verify for yourself!
 
 ${needsOpenClaw ? `### Running with OpenClaw widgets
 
-Your dashboard includes widgets that connect to OpenClaw. You'll need to run 
-the included server to proxy API requests.
+Your dashboard includes widgets that connect to OpenClaw. The server uses
+the OpenClaw CLI to query data, so make sure OpenClaw is installed and configured.
 
 \`\`\`bash
-# Make sure OpenClaw is running, then:
+# Make sure OpenClaw CLI is available:
+openclaw status
+
+# Then start the dashboard:
 node server.js
 \`\`\`
 
@@ -1640,19 +1795,11 @@ Open http://localhost:8080 in your browser.
 |----------|---------|-------------|
 | \`PORT\` | 8080 | Server port |
 | \`HOST\` | 127.0.0.1 | Bind address (localhost = secure) |
-| \`OPENCLAW_URL\` | http://localhost:18789 | Your OpenClaw gateway |
-
-> 💡 **Changed your OpenClaw port?** If you configured OpenClaw to run on a 
-> different port (check \`~/.openclaw/openclaw.json\`), update \`OPENCLAW_URL\` 
-> to match. Example: \`OPENCLAW_URL=http://localhost:12345 node server.js\`
 
 **Examples:**
 \`\`\`bash
 # Custom port
 PORT=3000 node server.js
-
-# Custom OpenClaw location
-OPENCLAW_URL=http://192.168.1.100:18789 node server.js
 
 # Expose to network (trusted networks only!)
 HOST=0.0.0.0 node server.js
