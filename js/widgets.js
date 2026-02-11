@@ -624,8 +624,7 @@ const WIDGETS = {
     description: 'Shows recent system logs from OpenClaw /api/system-log endpoint.',
     defaultWidth: 500,
     defaultHeight: 400,
-    hasApiKey: true,
-    apiKeyName: 'OPENCLAW_API',
+    hasApiKey: false,
     properties: {
       title: 'System Log',
       endpoint: '/api/system-log',
@@ -662,7 +661,7 @@ const WIDGETS = {
       }
       async function update_${props.id.replace(/-/g, '_')}() {
         try {
-          const res = await fetch('${props.endpoint || '/api/system-log'}');
+          const res = await fetch('${props.endpoint || '/api/system-log'}?max=${props.maxLines || 50}');
           const json = await res.json();
           // Handle both new format (json.entries) and old format (json.lines)
           let entries = json.entries || [];

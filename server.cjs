@@ -327,8 +327,9 @@ const server = http.createServer((req, res) => {
         return;
       }
       const content = fs.readFileSync(logPath, 'utf8');
+      const maxLines = Math.min(Math.max(parseInt(parsedUrl.searchParams.get('max')) || 50, 1), 200);
       const lines = content.split('\n').filter(l => l.trim());
-      const entries = lines.slice(-50).reverse().map(line => {
+      const entries = lines.slice(-maxLines).reverse().map(line => {
         let level = 'INFO';
         let category = 'system';
         if (/\b(error|fatal)\b/i.test(line)) level = 'ERROR';
