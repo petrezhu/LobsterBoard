@@ -669,7 +669,7 @@ const server = http.createServer((req, res) => {
   // Serve static files
   let filePath = path.join(__dirname, pathname);
   if (pathname === '/') {
-    filePath = path.join(__dirname, 'index.html');
+    filePath = path.join(__dirname, 'app.html');
   }
 
   // Prevent path traversal — ensure resolved path stays within __dirname
