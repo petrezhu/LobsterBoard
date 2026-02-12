@@ -644,8 +644,15 @@ const server = http.createServer((req, res) => {
 
   // GET /api/usage/claude - Anthropic Claude usage proxy
   if (req.method === 'GET' && pathname === '/api/usage/claude') {
-    const apiKey = process.env.ANTHROPIC_ADMIN_KEY;
-    if (!apiKey) { sendJson(res, 200, { error: 'ANTHROPIC_ADMIN_KEY not set', tokens: 0, cost: 0, models: [] }); return; }
+    let apiKey = process.env.ANTHROPIC_ADMIN_KEY;
+    if (!apiKey) {
+      try {
+        const cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+        const w = (cfg.widgets || []).find(w => w.type === 'ai-usage-claude');
+        if (w && w.properties && w.properties.apiKey) apiKey = w.properties.apiKey;
+      } catch(e) {}
+    }
+    if (!apiKey) { sendJson(res, 200, { error: 'No API key configured. Add your Anthropic Admin key in the widget properties.', tokens: 0, cost: 0, models: [] }); return; }
     (async () => {
       try {
         const now = new Date();
@@ -682,8 +689,15 @@ const server = http.createServer((req, res) => {
 
   // GET /api/usage/openai - OpenAI usage proxy
   if (req.method === 'GET' && pathname === '/api/usage/openai') {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) { sendJson(res, 200, { error: 'OPENAI_API_KEY not set', tokens: 0, cost: 0, models: [] }); return; }
+    let apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      try {
+        const cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+        const w = (cfg.widgets || []).find(w => w.type === 'ai-usage-openai');
+        if (w && w.properties && w.properties.apiKey) apiKey = w.properties.apiKey;
+      } catch(e) {}
+    }
+    if (!apiKey) { sendJson(res, 200, { error: 'No API key configured. Add your OpenAI key in the widget properties.', tokens: 0, cost: 0, models: [] }); return; }
     (async () => {
       try {
         const now = new Date();

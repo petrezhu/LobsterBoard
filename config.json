@@ -380,6 +380,30 @@
           }
         ]
       }
+    },
+    {
+      "id": "widget-35",
+      "type": "ai-usage-claude",
+      "x": 40,
+      "y": 780,
+      "width": 220,
+      "height": 120,
+      "properties": {
+        "title": "Claude",
+        "refreshInterval": 300
+      }
+    },
+    {
+      "id": "widget-36",
+      "type": "ai-usage-openai",
+      "x": 300,
+      "y": 780,
+      "width": 220,
+      "height": 120,
+      "properties": {
+        "title": "GPT",
+        "refreshInterval": 300
+      }
     }
   ]
 }

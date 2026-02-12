@@ -668,6 +668,7 @@ function initProperties() {
 
   // API key and endpoint
   document.getElementById('prop-api-key').addEventListener('input', onPropertyChange);
+  document.getElementById('prop-api-key-value').addEventListener('input', onPropertyChange);
   document.getElementById('prop-endpoint').addEventListener('input', onPropertyChange);
   document.getElementById('prop-refresh').addEventListener('change', onPropertyChange);
   document.getElementById('prop-timeformat').addEventListener('change', onPropertyChange);
@@ -910,6 +911,7 @@ function showProperties(widget) {
   if (template.hasApiKey) {
     document.getElementById('prop-api-group').style.display = 'block';
     document.getElementById('prop-api-key').value = template.apiKeyName || '';
+    document.getElementById('prop-api-key-value').value = widget.properties.apiKey || '';
     const noteEl = document.getElementById('prop-api-note');
     if (noteEl) {
       noteEl.textContent = template.properties?.apiKeyNote || '';
@@ -1275,6 +1277,9 @@ function onPropertyChange(e) {
       break;
     case 'prop-openclawurl':
       widget.properties.openclawUrl = e.target.value;
+      break;
+    case 'prop-api-key-value':
+      widget.properties.apiKey = e.target.value;
       break;
     case 'prop-endpoint':
       widget.properties.endpoint = e.target.value;
