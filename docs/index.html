@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LobsterBoard — Self-Hosted Dashboard Builder</title>
-  <meta name="description" content="A self-hosted, drag-and-drop dashboard builder with live system monitoring, dark theme, and 45 widgets. No cloud dependencies.">
+  <meta name="description" content="A self-hosted, drag-and-drop dashboard builder with live system monitoring, template gallery, dark theme, and 50 widgets. No cloud dependencies. Works standalone or with OpenClaw.">
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
@@ -36,15 +36,15 @@
     <div class="container hero-content">
       <img src="assets/lobsterboard-logo-hero.png" alt="LobsterBoard Logo" class="hero-logo fade-in">
       <h1 class="fade-in d1">Your Dashboard. Your Server. Your Rules.</h1>
-      <p class="hero-sub fade-in d2">A self-hosted, drag-and-drop dashboard builder with live system monitoring, dark theme, and <strong>45 widgets</strong>. No cloud. No accounts. No nonsense.</p>
+      <p class="hero-sub fade-in d2">A self-hosted, drag-and-drop dashboard builder with live system monitoring, template gallery, dark theme, and <strong>50 widgets</strong>. No cloud. No accounts. No nonsense. <strong>Works standalone — no OpenClaw required.</strong></p>
       <div class="hero-actions fade-in d3">
         <a href="#quickstart" class="btn btn-primary btn-lg">Get Started</a>
         <a href="https://github.com/curbob/LobsterBoard" target="_blank" class="btn btn-outline btn-lg">View on GitHub</a>
       </div>
       <div class="hero-badges fade-in d4">
         <img src="https://img.shields.io/npm/v/lobsterboard?style=flat-square&color=e74c3c&label=npm" alt="npm version">
-        <img src="https://img.shields.io/github/license/curbob/LobsterBoard?style=flat-square&color=555" alt="MIT License">
-        <img src="https://img.shields.io/badge/widgets-45-e74c3c?style=flat-square" alt="45 Widgets">
+        <img src="https://img.shields.io/badge/license-BSL--1.1-555?style=flat-square" alt="BSL-1.1 License">
+        <img src="https://img.shields.io/badge/widgets-50-e74c3c?style=flat-square" alt="50 Widgets">
         <img src="https://img.shields.io/badge/node-%E2%89%A516-333?style=flat-square&logo=node.js" alt="Node 16+">
       </div>
     </div>
@@ -83,8 +83,18 @@
         </div>
         <div class="feature-card">
           <div class="feature-icon">📦</div>
-          <h3>45 Widgets</h3>
+          <h3>50 Widgets</h3>
           <p>System stats, weather, stocks, crypto, calendars, todos, cameras, Docker, AI usage, and much more.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📋</div>
+          <h3>Template Gallery</h3>
+          <p>Export, import, and share dashboard layouts. Auto-captured screenshot previews, merge or replace import modes, and built-in starter templates to get going fast.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🚀</div>
+          <h3>Works Standalone</h3>
+          <p>No OpenClaw required. LobsterBoard runs independently as a self-contained dashboard — just Node.js and go. OpenClaw integration is optional.</p>
         </div>
       </div>
     </div>
@@ -96,7 +106,25 @@
       <h2 class="section-title">See It In Action</h2>
       <p class="section-sub">A real dashboard built with LobsterBoard. Drag, drop, save, done.</p>
       <div class="screenshot-wrap">
-        <img src="assets/screenshot.jpg" alt="LobsterBoard Dashboard Screenshot" class="screenshot" loading="lazy">
+        <img src="assets/lobsterboard-screenshot.jpg" alt="LobsterBoard Dashboard" class="screenshot" loading="lazy">
+      </div>
+      <div class="screenshot-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:30px;">
+        <div class="screenshot-wrap">
+          <p style="text-align:center;color:#8b949e;margin-bottom:10px;font-size:14px;">✏️ Edit Mode</p>
+          <img src="assets/lobsterboard-editor.jpg" alt="LobsterBoard Editor" class="screenshot" loading="lazy">
+        </div>
+        <div class="screenshot-wrap">
+          <p style="text-align:center;color:#8b949e;margin-bottom:10px;font-size:14px;">📋 Template Gallery</p>
+          <img src="assets/lobsterboard-templates.jpg" alt="Template Gallery" class="screenshot" loading="lazy">
+        </div>
+        <div class="screenshot-wrap">
+          <p style="text-align:center;color:#8b949e;margin-bottom:10px;font-size:14px;">📦 Template Import</p>
+          <img src="assets/lobsterboard-template-detail.jpg" alt="Template Import" class="screenshot" loading="lazy">
+        </div>
+        <div class="screenshot-wrap">
+          <p style="text-align:center;color:#8b949e;margin-bottom:10px;font-size:14px;">🖥️ Dashboard Example</p>
+          <img src="assets/lobsterboard-dashboard-2.jpg" alt="Dashboard Example" class="screenshot" loading="lazy">
+        </div>
       </div>
     </div>
   </section>
@@ -104,7 +132,7 @@
   <!-- Widgets -->
   <section id="widgets" class="section">
     <div class="container">
-      <h2 class="section-title">45 Widgets & Counting</h2>
+      <h2 class="section-title">50 Widgets & Counting</h2>
       <p class="section-sub">From system monitoring to smart home — there's a widget for that.</p>
       <div class="widget-categories">
         <div class="widget-cat">
@@ -215,7 +243,7 @@
       <img src="assets/lobsterboard-mascot-clean.png" alt="LobsterBoard Mascot" class="mascot">
       <div>
         <h2>Ready to build your dashboard?</h2>
-        <p>Open source, MIT licensed, and built for tinkerers. Star us on GitHub and get started today.</p>
+        <p>Open source, BSL-1.1 licensed, and built for tinkerers. Free for non-commercial use. Star us on GitHub and get started today.</p>
         <div class="hero-actions">
           <a href="https://github.com/curbob/LobsterBoard" target="_blank" class="btn btn-primary btn-lg">⭐ Star on GitHub</a>
           <a href="https://www.npmjs.com/package/lobsterboard" target="_blank" class="btn btn-outline btn-lg">View on npm</a>
@@ -229,7 +257,7 @@
     <div class="container footer-inner">
       <div class="footer-left">
         <img src="assets/lobsterboard-logo-white.png" alt="LobsterBoard" height="24">
-        <span>MIT License · Made with 🦞 by <a href="https://github.com/curbob">curbob</a></span>
+        <span>BSL-1.1 License · Made with 🦞 by <a href="https://github.com/curbob">curbob</a></span>
       </div>
       <div class="footer-links">
         <a href="https://github.com/curbob/LobsterBoard">GitHub</a>
