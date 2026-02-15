@@ -1028,6 +1028,21 @@ const server = http.createServer(async (req, res) => {
   }
 
   // GET /api/stats/stream - SSE endpoint for live stats
+  if (req.method === 'GET' && pathname === '/api/quote') {
+    const https = require('https');
+    https.get('https://zenquotes.io/api/random', { headers: { 'User-Agent': 'LobsterBoard/1.0' }, timeout: 5000 }, (proxyRes) => {
+      let body = '';
+      proxyRes.on('data', c => body += c);
+      proxyRes.on('end', () => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        sendResponse(res, 200, 'application/json', body);
+      });
+    }).on('error', () => {
+      sendResponse(res, 200, 'application/json', JSON.stringify([{ q: 'Stay hungry, stay foolish.', a: 'Steve Jobs' }]));
+    });
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/api/latest-image') {
     return latestImageHandler(parsedUrl, res);
   }

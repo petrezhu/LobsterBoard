@@ -2161,10 +2161,13 @@ const WIDGETS = {
       // Quote of Day Widget: ${props.id}
       async function update_${props.id.replace(/-/g, '_')}() {
         try {
-          const res = await fetch('https://api.quotable.io/random');
+          const res = await fetch('/api/quote');
           const data = await res.json();
-          document.getElementById('${props.id}-text').textContent = '"' + data.content + '"';
-          document.getElementById('${props.id}-author').textContent = '— ' + data.author;
+          const quote = Array.isArray(data) ? data[0] : data;
+          const text = quote.q || quote.content || '';
+          const author = quote.a || quote.author || 'Unknown';
+          document.getElementById('${props.id}-text').textContent = '\u201c' + text + '\u201d';
+          document.getElementById('${props.id}-author').textContent = '— ' + author;
         } catch (e) {
           document.getElementById('${props.id}-text').textContent = '"Stay hungry, stay foolish."';
           document.getElementById('${props.id}-author').textContent = '— Steve Jobs';
