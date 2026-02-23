@@ -316,9 +316,7 @@ body {
 
 .canvas-wrapper {
   flex: 1;
-  display: flex;
-  justify-content: left;
-  align-items: flex-start;
+  display: block;
   padding: 40px;
   overflow: auto;
   background: 
@@ -335,7 +333,7 @@ body {
   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   transform-origin: top left;
   transition: transform 0.2s ease;
-  margin: auto;
+  margin: 0;
 }
 
 .canvas-grid {
@@ -363,6 +361,11 @@ body {
 
 .canvas.has-widgets .drop-hint {
   display: none;
+}
+
+.canvas.has-widgets {
+  margin-left: 15px;
+  transform: scale(1.0) !important;
 }
 
 .canvas.drag-over {
@@ -1015,7 +1018,7 @@ body[data-mode="view"] .canvas-wrapper {
   background: var(--bg-primary);
   display: flex;
   align-items: flex-start;
-  justify-content: left;
+  justify-content: center;
   overflow: hidden;
   width: 100vw;
   height: 100vh;
@@ -1126,7 +1129,7 @@ body[data-mode="view"] .placed-widget .widget-render {
   bottom: 20px;
   right: 20px;
   z-index: 999;
-  background: #3fb950;
+  background: var(--accent-blue);
   color: #fff;
   padding: 12px 24px;
   font-size: 16px;
@@ -1137,7 +1140,7 @@ body[data-mode="view"] .placed-widget .widget-render {
 }
 
 .edit-layout-btn:hover {
-  background: #4cc95f;
+  background: #6cb3fa;
 }
 
 body[data-mode="view"] .edit-layout-btn {

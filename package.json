@@ -74,6 +74,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
+    "sqlite3": "^5.1.7",
     "systeminformation": "^5.30.7"
   }
 }

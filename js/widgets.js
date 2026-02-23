@@ -2711,8 +2711,15 @@ const WIDGETS = {
         <div class="dash-card-head">
           <span class="dash-card-title">🌐 ${props.title || 'Embed'}</span>
         </div>
-        <div class="dash-card-body" style="padding:0;overflow:hidden;">
-          <iframe src="${props.embedUrl || 'about:blank'}" style="width:100%;height:100%;border:none;" ${props.allowFullscreen ? 'allowfullscreen' : ''}></iframe>
+        <div class="dash-card-body" style="padding:0;overflow:hidden;position:relative;">
+          <iframe src="${props.embedUrl || 'about:blank'}" 
+                  style="width:100%;height:100%;border:none;transform-origin:top left;" 
+                  ${props.allowFullscreen ? 'allowfullscreen' : ''} 
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"
+                  allow="accelerometer; camera; geolocation; microphone; payment"
+                  referrerpolicy="no-referrer-when-downgrade"
+                  loading="lazy"
+                  scrolling="no"></iframe>
         </div>
       </div>`,
     generateJs: (props) => `
@@ -2897,6 +2904,429 @@ const WIDGETS = {
         } catch (e) {
           console.error('Pages menu widget error:', e);
           document.getElementById('${props.id}-list').innerHTML = '<span class="pages-menu-item">Error loading pages</span>';
+        }
+      }
+      update_${props.id.replace(/-/g, '_')}();
+      setInterval(update_${props.id.replace(/-/g, '_')}, ${(props.refreshInterval || 60) * 1000});
+    `
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OpenClaw Dashboard Widgets
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  'oc-tasks-completed': {
+    name: 'Tasks Completed',
+    icon: '✅',
+    category: 'small',
+    description: 'Shows monthly completed tasks count with trend indicator.',
+    defaultWidth: 200,
+    defaultHeight: 120,
+    hasApiKey: false,
+    properties: {
+      title: 'Tasks Completed',
+      refreshInterval: 60
+    },
+    preview: `<div style="text-align:center;padding:8px;">
+      <div style="font-size:24px;color:#4ecdc4;">42</div>
+      <div style="font-size:11px;color:#8b949e;">↑ +23% vs last month</div>
+    </div>`,
+    generateHtml: (props) => `
+      <div class="dash-card" id="widget-${props.id}" style="height:100%;">
+        <div class="dash-card-head">
+          <span class="dash-card-title">✅ ${props.title || 'Tasks Completed'}</span>
+        </div>
+        <div class="dash-card-body" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+          <div style="text-align:center;">
+            <div class="kpi-value cyan" id="${props.id}-value">--</div>
+            <div class="kpi-label" id="${props.id}-change" style="font-size:11px;color:#8b949e;">Loading...</div>
+          </div>
+        </div>
+      </div>`,
+    generateJs: (props) => `
+      async function update_${props.id.replace(/-/g, '_')}() {
+        try {
+          const res = await fetch('/api/openclaw/tasks');
+          const data = await res.json();
+          document.getElementById('${props.id}-value').textContent = data.completed || 0;
+          document.getElementById('${props.id}-change').textContent = '↑ ' + (data.change || '+0%') + ' vs last month';
+        } catch (e) {
+          console.error('Tasks widget error:', e);
+          document.getElementById('${props.id}-value').textContent = '--';
+        }
+      }
+      update_${props.id.replace(/-/g, '_')}();
+      setInterval(update_${props.id.replace(/-/g, '_')}, ${(props.refreshInterval || 60) * 1000});
+    `
+  },
+
+  'oc-active-days': {
+    name: 'Active Days',
+    icon: '📅',
+    category: 'small',
+    description: 'Shows active days count with attendance rate.',
+    defaultWidth: 200,
+    defaultHeight: 120,
+    hasApiKey: false,
+    properties: {
+      title: 'Active Days',
+      refreshInterval: 60
+    },
+    preview: `<div style="text-align:center;padding:8px;">
+      <div style="font-size:24px;color:#ff9f43;">28</div>
+      <div style="font-size:11px;color:#8b949e;">100% attendance</div>
+    </div>`,
+    generateHtml: (props) => `
+      <div class="dash-card" id="widget-${props.id}" style="height:100%;">
+        <div class="dash-card-head">
+          <span class="dash-card-title">📅 ${props.title || 'Active Days'}</span>
+        </div>
+        <div class="dash-card-body" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+          <div style="text-align:center;">
+            <div class="kpi-value orange" id="${props.id}-value">--</div>
+            <div class="kpi-label" id="${props.id}-rate" style="font-size:11px;color:#8b949e;">Loading...</div>
+          </div>
+        </div>
+      </div>`,
+    generateJs: (props) => `
+      async function update_${props.id.replace(/-/g, '_')}() {
+        try {
+          const res = await fetch('/api/openclaw/tasks');
+          const data = await res.json();
+          document.getElementById('${props.id}-value').textContent = data.activeDays || 0;
+          const rate = data.totalDays ? Math.round((data.activeDays / data.totalDays) * 100) : 0;
+          document.getElementById('${props.id}-rate').textContent = rate + '% attendance';
+        } catch (e) {
+          console.error('Active days widget error:', e);
+          document.getElementById('${props.id}-value').textContent = '--';
+        }
+      }
+      update_${props.id.replace(/-/g, '_')}();
+      setInterval(update_${props.id.replace(/-/g, '_')}, ${(props.refreshInterval || 60) * 1000});
+    `
+  },
+
+  'oc-streak': {
+    name: 'Streak Days',
+    icon: '🔥',
+    category: 'small',
+    description: 'Shows consecutive active days streak with flame animation.',
+    defaultWidth: 200,
+    defaultHeight: 120,
+    hasApiKey: false,
+    properties: {
+      title: 'Streak',
+      refreshInterval: 60
+    },
+    preview: `<div style="text-align:center;padding:8px;">
+      <div style="font-size:24px;color:#e74c3c;">12</div>
+      <div style="font-size:11px;color:#8b949e;">🔥 Streak record</div>
+    </div>`,
+    generateHtml: (props) => `
+      <div class="dash-card" id="widget-${props.id}" style="height:100%;">
+        <div class="dash-card-head">
+          <span class="dash-card-title">🔥 ${props.title || 'Streak'}</span>
+        </div>
+        <div class="dash-card-body" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+          <span id="${props.id}-flame" style="font-size:32px;animation:flame 1.5s ease-in-out infinite;">🔥</span>
+          <div style="text-align:center;">
+            <div class="kpi-value" style="color:#e74c3c;" id="${props.id}-value">--</div>
+            <div class="kpi-label" style="font-size:11px;color:#8b949e;">Streak days</div>
+          </div>
+        </div>
+      </div>
+      <style>
+        @keyframes flame {
+          0%, 100% { transform: scale(1) rotate(0deg); }
+          50% { transform: scale(1.1) rotate(5deg); }
+        }
+      </style>`,
+    generateJs: (props) => `
+      async function update_${props.id.replace(/-/g, '_')}() {
+        try {
+          const res = await fetch('/api/openclaw/tasks');
+          const data = await res.json();
+          document.getElementById('${props.id}-value').textContent = data.streakDays || 0;
+        } catch (e) {
+          console.error('Streak widget error:', e);
+          document.getElementById('${props.id}-value').textContent = '--';
+        }
+      }
+      update_${props.id.replace(/-/g, '_')}();
+      setInterval(update_${props.id.replace(/-/g, '_')}, ${(props.refreshInterval || 60) * 1000});
+    `
+  },
+
+  'oc-active-goals': {
+    name: 'Active Goals',
+    icon: '🎯',
+    category: 'small',
+    description: 'Shows active goals count with completion status.',
+    defaultWidth: 200,
+    defaultHeight: 120,
+    hasApiKey: false,
+    properties: {
+      title: 'Active Goals',
+      refreshInterval: 60
+    },
+    preview: `<div style="text-align:center;padding:8px;">
+      <div style="font-size:24px;color:#9b59b6;">11</div>
+      <div style="font-size:11px;color:#8b949e;">3 completed</div>
+    </div>`,
+    generateHtml: (props) => `
+      <div class="dash-card" id="widget-${props.id}" style="height:100%;">
+        <div class="dash-card-head">
+          <span class="dash-card-title">🎯 ${props.title || 'Active Goals'}</span>
+        </div>
+        <div class="dash-card-body" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+          <div style="text-align:center;">
+            <div class="kpi-value" style="color:#9b59b6;" id="${props.id}-value">--</div>
+            <div class="kpi-label" id="${props.id}-completed" style="font-size:11px;color:#8b949e;">Loading...</div>
+          </div>
+        </div>
+      </div>`,
+    generateJs: (props) => `
+      async function update_${props.id.replace(/-/g, '_')}() {
+        try {
+          const res = await fetch('/api/openclaw/goals');
+          const data = await res.json();
+          document.getElementById('${props.id}-value').textContent = data.activeGoals || 0;
+          document.getElementById('${props.id}-completed').textContent = (data.completedGoals || 0) + ' completed';
+        } catch (e) {
+          console.error('Goals widget error:', e);
+          document.getElementById('${props.id}-value').textContent = '--';
+        }
+      }
+      update_${props.id.replace(/-/g, '_')}();
+      setInterval(update_${props.id.replace(/-/g, '_')}, ${(props.refreshInterval || 60) * 1000});
+    `
+  },
+
+  'oc-task-trend': {
+    name: 'Task Trend',
+    icon: '📈',
+    category: 'large',
+    description: 'Shows task completion trend chart (last 30 days).',
+    defaultWidth: 400,
+    defaultHeight: 300,
+    hasApiKey: false,
+    properties: {
+      title: 'Task Trend',
+      refreshInterval: 300
+    },
+    preview: `<div style="padding:8px;text-align:center;color:#8b949e;font-size:11px;">
+      📈 Task completion trend (30 days)
+    </div>`,
+    generateHtml: (props) => `
+      <div class="dash-card" id="widget-${props.id}" style="height:100%;">
+        <div class="dash-card-head">
+          <span class="dash-card-title">📈 ${props.title || 'Task Trend'}</span>
+        </div>
+        <div class="dash-card-body" style="padding:12px;height:calc(100% - 40px);">
+          <canvas id="${props.id}-chart" style="width:100%;height:100%;"></canvas>
+        </div>
+      </div>`,
+    generateJs: (props) => `
+      let chart_${props.id.replace(/-/g, '_')} = null;
+      async function update_${props.id.replace(/-/g, '_')}() {
+        try {
+          const res = await fetch('/api/openclaw/tasks');
+          const data = await res.json();
+          const ctx = document.getElementById('${props.id}-chart');
+          if (!ctx) return;
+          
+          if (chart_${props.id.replace(/-/g, '_')}) {
+            chart_${props.id.replace(/-/g, '_')}.destroy();
+          }
+          
+          chart_${props.id.replace(/-/g, '_')} = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: data.trendLabels || [],
+              datasets: [{
+                label: 'Tasks Completed',
+                data: data.trendData || [],
+                borderColor: '#ff9f43',
+                backgroundColor: 'rgba(255, 159, 67, 0.1)',
+                tension: 0.4,
+                fill: true
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: { color: '#6c6c8c' },
+                  grid: { color: '#2a2a4a' }
+                },
+                x: {
+                  ticks: { 
+                    color: '#6c6c8c',
+                    maxRotation: 45,
+                    minRotation: 45
+                  },
+                  grid: { display: false }
+                }
+              }
+            }
+          });
+        } catch (e) {
+          console.error('Task trend widget error:', e);
+        }
+      }
+      update_${props.id.replace(/-/g, '_')}();
+      setInterval(update_${props.id.replace(/-/g, '_')}, ${(props.refreshInterval || 300) * 1000});
+    `
+  },
+
+  'oc-agent-usage': {
+    name: 'Agent Usage',
+    icon: '🤖',
+    category: 'large',
+    description: 'Shows agent usage statistics with pie chart.',
+    defaultWidth: 400,
+    defaultHeight: 300,
+    hasApiKey: false,
+    properties: {
+      title: 'Agent Usage',
+      refreshInterval: 300
+    },
+    preview: `<div style="padding:8px;text-align:center;color:#8b949e;font-size:11px;">
+      🤖 Agent usage distribution
+    </div>`,
+    generateHtml: (props) => `
+      <div class="dash-card" id="widget-${props.id}" style="height:100%;">
+        <div class="dash-card-head">
+          <span class="dash-card-title">🤖 ${props.title || 'Agent Usage'}</span>
+        </div>
+        <div class="dash-card-body" style="padding:12px;height:calc(100% - 40px);">
+          <canvas id="${props.id}-chart" style="width:100%;height:100%;"></canvas>
+        </div>
+      </div>`,
+    generateJs: (props) => `
+      let chart_${props.id.replace(/-/g, '_')} = null;
+      async function update_${props.id.replace(/-/g, '_')}() {
+        try {
+          const res = await fetch('/api/openclaw/agents');
+          const data = await res.json();
+          const ctx = document.getElementById('${props.id}-chart');
+          if (!ctx) return;
+          
+          if (chart_${props.id.replace(/-/g, '_')}) {
+            chart_${props.id.replace(/-/g, '_')}.destroy();
+          }
+          
+          chart_${props.id.replace(/-/g, '_')} = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: data.labels || [],
+              datasets: [{
+                data: data.usage || [],
+                backgroundColor: [
+                  '#ff9f43',
+                  '#4ecdc4',
+                  '#9b59b6',
+                  '#e74c3c',
+                  '#3498db',
+                  '#2ecc71'
+                ]
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'right',
+                  labels: { color: '#e0e0e0', font: { size: 11 } }
+                }
+              }
+            }
+          });
+        } catch (e) {
+          console.error('Agent usage widget error:', e);
+        }
+      }
+      update_${props.id.replace(/-/g, '_')}();
+      setInterval(update_${props.id.replace(/-/g, '_')}, ${(props.refreshInterval || 300) * 1000});
+    `
+  },
+
+  'oc-goals-progress': {
+    name: 'Goals Progress',
+    icon: '🎯',
+    category: 'large',
+    description: 'Shows detailed progress for all active goals with progress bars.',
+    defaultWidth: 600,
+    defaultHeight: 400,
+    hasApiKey: false,
+    properties: {
+      title: 'Goals Progress',
+      refreshInterval: 60
+    },
+    preview: `<div style="padding:8px;font-size:11px;color:#8b949e;">
+      <div>🎯 Goal 1: 75% complete</div>
+      <div>🎯 Goal 2: 50% complete</div>
+      <div>🎯 Goal 3: 25% complete</div>
+    </div>`,
+    generateHtml: (props) => `
+      <div class="dash-card" id="widget-${props.id}" style="height:100%;">
+        <div class="dash-card-head">
+          <span class="dash-card-title">🎯 ${props.title || 'Goals Progress'}</span>
+        </div>
+        <div class="dash-card-body" id="${props.id}-list" style="padding:12px;overflow-y:auto;max-height:calc(100% - 40px);">
+          <div style="text-align:center;color:#8b949e;padding:20px;">Loading goals...</div>
+        </div>
+      </div>`,
+    generateJs: (props) => `
+      async function update_${props.id.replace(/-/g, '_')}() {
+        try {
+          const res = await fetch('/api/openclaw/goals');
+          const data = await res.json();
+          const container = document.getElementById('${props.id}-list');
+          
+          if (!data.goals || data.goals.length === 0) {
+            container.innerHTML = '<div style="text-align:center;color:#8b949e;padding:20px;">No active goals</div>';
+            return;
+          }
+          
+          const statusColors = {
+            completed: { bg: 'rgba(78, 205, 196, 0.2)', text: '#4ecdc4', border: '#4ecdc4' },
+            normal: { bg: 'rgba(255, 159, 67, 0.2)', text: '#ff9f43', border: '#ff9f43' },
+            warning: { bg: 'rgba(231, 76, 60, 0.2)', text: '#e74c3c', border: '#e74c3c' }
+          };
+          
+          const statusIcons = {
+            completed: '🎉',
+            normal: '🔄',
+            warning: '⚠️'
+          };
+          
+          container.innerHTML = data.goals.map(goal => {
+            const colors = statusColors[goal.status] || statusColors.normal;
+            return \`
+              <div style="border:1px solid #374151;border-radius:8px;padding:12px;margin-bottom:12px;background:#21262d;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <span style="font-size:13px;color:#e0e0e0;">\${goal.name}</span>
+                  <span style="font-size:11px;padding:4px 8px;border-radius:4px;background:\${colors.bg};color:\${colors.text};border:1px solid \${colors.border};">
+                    \${statusIcons[goal.status]} \${goal.milestones}
+                  </span>
+                </div>
+                <div style="position:relative;height:8px;background:#374151;border-radius:4px;overflow:hidden;">
+                  <div style="position:absolute;height:100%;background:linear-gradient(90deg, #ff9f43 0%, #ff6b6b 100%);border-radius:4px;width:\${goal.progress}%;transition:width 1s ease-out;"></div>
+                </div>
+                <div style="text-align:right;font-size:11px;color:#8b949e;margin-top:4px;">\${goal.progress}%</div>
+              </div>
+            \`;
+          }).join('');
+        } catch (e) {
+          console.error('Goals progress widget error:', e);
+          document.getElementById('${props.id}-list').innerHTML = '<div style="text-align:center;color:#e74c3c;padding:20px;">Error loading goals</div>';
         }
       }
       update_${props.id.replace(/-/g, '_')}();

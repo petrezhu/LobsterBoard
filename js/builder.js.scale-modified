@@ -389,35 +389,34 @@ function scaleCanvasToFit() {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const cw = state.canvas.width;
-  const hasWidgets = canvas.classList.contains('has-widgets');
 
   if (isScrollableMode()) {
     // Scrollable: scale width to fit viewport, height scrolls naturally
     const effectiveHeight = getScrollableCanvasHeight();
     canvas.style.height = effectiveHeight + 'px';
-    let scale = vw / cw;
-    // When has widgets, prefer larger scale (closer to 1.0)
-    if (hasWidgets) {
-      scale = Math.max(scale, 0.95);
-    }
+    const hasWidgets = canvas.classList.contains('has-widgets');
+    const scale = hasWidgets ? 0.98 : (vw / cw);
     canvas.style.transform = `scale(${scale})`;
     canvas.style.transformOrigin = 'top left';
     const scaledW = cw * scale;
     const offsetX = Math.max(0, (vw - scaledW) / 2);
-    canvas.style.marginLeft = (hasWidgets ? 20 : offsetX) + 'px';
+    canvas.style.marginLeft = (hasWidgets ? 15 : offsetX) + 'px';
     canvas.style.marginTop = '0px';
     // Set wrapper height so page scrolls
     const wrapper = document.getElementById('canvas-wrapper');
-    wrapper.style.height = (effectiveHeight * scale) + 'px';
+    if (hasWidgets) {
+      // Force scrollable when has widgets
+      wrapper.style.height = 'auto';
+      wrapper.style.overflow = 'auto';
+    } else {
+      wrapper.style.height = (effectiveHeight * scale) + 'px';
+    }
     return;
   }
 
   const ch = state.canvas.height;
-  let scale = Math.min(vw / cw, vh / ch);
-  // When has widgets, prefer larger scale (closer to 1.0)
-  if (hasWidgets) {
-    scale = Math.max(scale, 0.95);
-  }
+  const hasWidgets = canvas.classList.contains('has-widgets');
+  const scale = hasWidgets ? 0.98 : Math.min(vw / cw, vh / ch);
   canvas.style.transform = `scale(${scale})`;
   canvas.style.transformOrigin = 'top left';
   // Center if there's leftover space
@@ -425,7 +424,7 @@ function scaleCanvasToFit() {
   const scaledH = ch * scale;
   const offsetX = Math.max(0, (vw - scaledW) / 2);
   const offsetY = Math.max(0, (vh - scaledH) / 2);
-  canvas.style.marginLeft = (hasWidgets ? 20 : offsetX) + 'px';
+  canvas.style.marginLeft = (hasWidgets ? 15 : offsetX) + 'px';
   canvas.style.marginTop = (hasWidgets ? 0 : offsetY) + 'px';
 }
 
@@ -3333,3 +3332,48 @@ function selectDir(dirPath) {
   input.dispatchEvent(new Event('input', { bubbles: true }));
   document.getElementById('dir-browser').style.display = 'none';
 }
+
+// ─── Auto-hide Edit Layout button after 5 seconds ───
+(function() {
+  const editBtn = document.getElementById('btn-edit-layout');
+  if (!editBtn) return;
+  
+  let hideTimer = null;
+  let isHidden = false;
+  
+  function hideButton() {
+    if (document.body.dataset.mode === 'view' && !state.publicMode) {
+      editBtn.style.opacity = '0';
+      editBtn.style.pointerEvents = 'none';
+      isHidden = true;
+    }
+  }
+  
+  function showButton() {
+    if (document.body.dataset.mode === 'view' && !state.publicMode) {
+      editBtn.style.opacity = '1';
+      editBtn.style.pointerEvents = 'auto';
+      isHidden = false;
+      
+      // Reset timer
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(hideButton, 5000);
+    }
+  }
+  
+  // Add transition
+  editBtn.style.transition = 'opacity 0.3s ease';
+  
+  // Initial hide after 5 seconds
+  hideTimer = setTimeout(hideButton, 5000);
+  
+  // Show on mouse move
+  document.addEventListener('mousemove', function() {
+    if (isHidden) {
+      showButton();
+    }
+  });
+  
+  // Show on button hover
+  editBtn.addEventListener('mouseenter', showButton);
+})();
