@@ -1,0 +1,8 @@
+{
+  "id": "agents-pixel",
+  "title": "Agent 像素小人",
+  "icon": "🎮",
+  "description": "实时显示 7 个 agent 的像素小人动画",
+  "order": 1,
+  "nav": true
+}

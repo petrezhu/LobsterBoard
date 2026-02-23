@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent 像素小人 - 古风版</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+    }
+    #game-container {
+      border: 2px solid #00ff00;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    }
+    #status-panel {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      border: 1px solid #00ff00;
+      padding: 15px;
+      color: #00ff00;
+      font-size: 12px;
+      max-width: 300px;
+      border-radius: 5px;
+    }
+    .agent-status {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid;
+    }
+    .status-idle { border-color: #00ff00; }
+    .status-busy { border-color: #ff9900; }
+    .status-inactive { border-color: #666666; }
+    .status-error { border-color: #ff0000; }
+    #loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #00ff00;
+      font-size: 18px;
+      text-align: center;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div>🎮 加载中...</div>
+    <div style="font-size: 12px; margin-top: 10px;">正在加载 56 张角色图...</div>
+  </div>
+  
+  <div id="status-panel">
+    <h3 style="margin-top: 0;">📡 Agent 状态</h3>
+    <div id="agent-list"></div>
+    <div style="margin-top: 10px; font-size: 10px; opacity: 0.7;">
+      更新时间: <span id="update-time">--:--:--</span>
+    </div>
+  </div>
+  
+  <div id="game-container"></div>
+
+  <script>
+    // Agent 配置（7 个角色）
+    const AGENT_CONFIG = {
+      bibi: { name: '哔哔', emoji: '📡', x: 100, y: 150 },
+      lingtian: { name: '零天', emoji: '⚙️', x: 250, y: 150 },
+      xiayan: { name: '夏言', emoji: '🍃', x: 400, y: 150 },
+      boran: { name: '博燃', emoji: '💰', x: 550, y: 150 },
+      huaxian: { name: '画仙', emoji: '🎨', x: 175, y: 350 },
+      yanan: { name: '验安', emoji: '🛡️', x: 400, y: 350 },
+      shuxian: { name: '书仙', emoji: '📖', x: 550, y: 350 }
+    };
+
+    // Phaser 配置
+    const config = {
+      type: Phaser.AUTO,
+      width: 800,
+      height: 600,
+      parent: 'game-container',
+      backgroundColor: '#2d2d2d',
+      scene: {
+        preload: preload,
+        create: create,
+        update: update
+      },
+      physics: {
+        default: 'arcade',
+        arcade: {
+          gravity: { y: 0 },
+          debug: false
+        }
+      }
+    };
+
+    const game = new Phaser.Game(config);
+    let agents = {};
+    let agentData = [];
+
+    function preload() {
+      console.log('🎮 开始加载角色图...');
+      
+      // 使用绝对路径
+      const basePath = '/pages/agents-pixel/assets/ancient-style-64';
+      
+      // 生成所有图片的加载列表
+      const imagesToLoad = [];
+      for (const agentId in AGENT_CONFIG) {
+        const directions = ['down', 'up', 'left', 'right'];
+        const actions = ['idle', 'walk'];
+        
+        actions.forEach(action => {
+          directions.forEach(dir => {
+            imagesToLoad.push({
+              key: `${agentId}-${action}-${dir}`,
+              path: `${basePath}/${agentId}-${action}-${dir}.png`
+            });
+          });
+        });
+      }
+      
+      // 一次性加载所有图片
+      imagesToLoad.forEach(img => {
+        this.load.image(img.key, img.path);
+      });
+      
+      // 添加加载错误处理
+      this.load.on('loaderror', (file) => {
+        console.error('❌ 加载失败:', file.src);
+      });
+      
+      // 添加加载成功日志
+      this.load.on('filecomplete', (key) => {
+        console.log(`✅ 加载: ${key}`);
+      });
+    }
+
+    function create() {
+      console.log('🎨 创建角色...');
+      
+      // 隐藏加载提示
+      const loading = document.getElementById('loading');
+      if (loading) loading.style.display = 'none';
+      
+      // 创建每个 agent
+      for (const [agentId, cfg] of Object.entries(AGENT_CONFIG)) {
+        // 创建精灵
+        const sprite = this.add.sprite(cfg.x, cfg.y, `${agentId}-idle-down`);
+        sprite.setScale(2);
+        
+        // 创建名字文本
+        const nameText = this.add.text(cfg.x, cfg.y + 60, cfg.name, {
+          fontSize: '14px',
+          color: '#fff',
+          stroke: '#000',
+          strokeThickness: 3,
+          align: 'center'
+        }).setOrigin(0.5);
+        
+        // 创建状态图标
+        const statusIcon = this.add.text(cfg.x, cfg.y - 60, '🧍', {
+          fontSize: '16px'
+        }).setOrigin(0.5);
+        
+        // 保存 agent 数据
+        agents[agentId] = {
+          sprite,
+          nameText,
+          statusIcon,
+          originalX: cfg.x,
+          originalY: cfg.y,
+          direction: 'down',
+          isWalking: false,
+          targetX: cfg.x,
+          targetY: cfg.y,
+          status: 'idle'
+        };
+      }
+      
+      console.log('✨ 所有角色已创建');
+      
+      // 定期更新 agent 状态
+      this.time.addEvent({
+        delay: 2000,
+        callback: updateAgentStates,
+        callbackScope: this,
+        loop: true
+      });
+      
+      // 立即拉取一次
+      updateAgentStates.call(this);
+      
+      // 添加随机行为定时器（闲逛）
+      this.time.addEvent({
+        delay: 3000,
+        callback: randomWalk,
+        callbackScope: this,
+        loop: true
+      });
+    }
+
+    function update() {
+      // 更新每个 agent 的位置和动画
+      for (const [agentId, agent] of Object.entries(agents)) {
+        // 同步名字和状态图标位置
+        agent.nameText.x = agent.sprite.x;
+        agent.nameText.y = agent.sprite.y + 60;
+        agent.statusIcon.x = agent.sprite.x;
+        agent.statusIcon.y = agent.sprite.y - 60;
+
+        // 如果正在行走，移动到目标位置
+        if (agent.isWalking) {
+          const dx = agent.targetX - agent.sprite.x;
+          const dy = agent.targetY - agent.sprite.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < 5) {
+            // 到达目标，停止行走
+            agent.isWalking = false;
+            agent.sprite.setTexture(`${agentId}-idle-${agent.direction}`);
+          } else {
+            // 继续移动
+            const speed = 2;
+            agent.sprite.x += (dx / distance) * speed;
+            agent.sprite.y += (dy / distance) * speed;
+
+            // 更新方向
+            if (Math.abs(dx) > Math.abs(dy)) {
+              agent.direction = dx > 0 ? 'right' : 'left';
+            } else {
+              agent.direction = dy > 0 ? 'down' : 'up';
+            }
+
+            // 更新行走动画（关键：切换图片）
+            agent.sprite.setTexture(`${agentId}-walk-${agent.direction}`);
+          }
+        }
+      }
+    }
+
+    // 从 API 拉取 agent 状态
+    async function updateAgentStates() {
+      try {
+        const response = await fetch('/api/openclaw/agents');
+        const data = await response.json();
+        
+        if (data.status === 'ok') {
+          agentData = data.agents;
+          
+          // 更新每个 agent 的状态
+          data.agents.forEach(agentInfo => {
+            const agent = agents[agentInfo.id];
+            if (agent) {
+              agent.status = agentInfo.status;
+              
+              // 更新状态图标
+              switch (agentInfo.status) {
+                case 'busy':
+                  agent.statusIcon.setText('🏃');
+                  break;
+                case 'idle':
+                  agent.statusIcon.setText('🧍');
+                  break;
+                case 'inactive':
+                  agent.statusIcon.setText('💤');
+                  break;
+                case 'error':
+                  agent.statusIcon.setText('⚠️');
+                  break;
+              }
+            }
+          });
+
+          // 更新状态面板
+          updateStatusPanel(data.agents);
+        }
+      } catch (error) {
+        console.error('❌ 获取 agent 状态失败:', error);
+      }
+    }
+
+    // 更新状态面板
+    function updateStatusPanel(agents) {
+      const agentList = document.getElementById('agent-list');
+      const updateTime = document.getElementById('update-time');
+      
+      agentList.innerHTML = agents.map(agent => `
+        <div class="agent-status status-${agent.status}">
+          ${agent.emoji} ${agent.name}: ${getStatusText(agent.status)}
+          ${agent.currentTask ? `<br><small>→ ${agent.currentTask}</small>` : ''}
+        </div>
+      `).join('');
+      
+      const now = new Date();
+      updateTime.textContent = now.toLocaleTimeString('zh-CN');
+    }
+
+    function getStatusText(status) {
+      const statusMap = {
+        idle: '空闲',
+        busy: '忙碌中',
+        inactive: '不活跃',
+        error: '报错'
+      };
+      return statusMap[status] || status;
+    }
+
+    // 随机行走（闲逛）
+    function randomWalk() {
+      for (const [agentId, agent] of Object.entries(agents)) {
+        // 只有空闲的 agent 才会闲逛
+        if (agent.status === 'idle' && !agent.isWalking && Math.random() < 0.3) {
+          // 随机目标位置（在原位置附近）
+          agent.targetX = agent.originalX + (Math.random() - 0.5) * 200;
+          agent.targetY = agent.originalY + (Math.random() - 0.5) * 150;
+          
+          // 边界限制
+          agent.targetX = Math.max(100, Math.min(700, agent.targetX));
+          agent.targetY = Math.max(100, Math.min(500, agent.targetY));
+          
+          agent.isWalking = true;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

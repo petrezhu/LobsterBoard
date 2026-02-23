@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Images</title>
+</head>
+<body>
+  <h1>测试图片加载</h1>
+  <div id="results"></div>
+  <script>
+    const basePath = window.location.pathname.replace(/\/[^\/]*$/, '');
+    const images = ['bibi-idle-down', 'xiayan-idle-down', 'yanan-idle-down'];
+    const results = document.getElementById('results');
+    
+    images.forEach(name => {
+      const img = document.createElement('img');
+      img.src = `${basePath}/assets/ancient-style-64/${name}.png`;
+      img.alt = name;
+      img.style.border = '2px solid red';
+      img.style.margin = '10px';
+      
+      img.onload = () => {
+        img.style.border = '2px solid green';
+        results.innerHTML += `<div>✅ ${name}: 加载成功 (${img.naturalWidth}x${img.naturalHeight})</div>`;
+      };
+      
+      img.onerror = () => {
+        results.innerHTML += `<div>❌ ${name}: 加载失败</div>`;
+      };
+      
+      document.body.appendChild(img);
+    });
+  </script>
+</body>
+</html>

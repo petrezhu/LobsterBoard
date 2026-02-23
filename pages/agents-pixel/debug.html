@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head><title>Debug Images</title></head>
+<body>
+<h1>图片测试</h1>
+<div id="log"></div>
+<script>
+const basePath = window.location.pathname.replace(/\/[^\/]*$/, '');
+const log = document.getElementById('log');
+
+function testImage(name) {
+  const img = new Image();
+  const path = basePath + '/assets/ancient-style-64/' + name + '.png';
+  log.innerHTML += `<p>Testing ${name}: ${path}</p>`;
+  
+  img.onload = () => {
+    log.innerHTML += `<p style="color:green">✅ ${name}: 加载成功 (${img.naturalWidth}x${img.naturalHeight})</p>`;
+    document.body.appendChild(img);
+  };
+  
+  img.onerror = () => {
+    log.innerHTML += `<p style="color:red">❌ ${name}: 加载失败</p>`;
+  };
+  
+  img.src = path;
+}
+
+// Test first 3 images
+testImage('bibi-idle-down');
+setTimeout(() => testImage('xiayan-idle-down'), 100);
+setTimeout(() => testImage('yanan-idle-down'), 200);
+</script>
+</body>
+</html>

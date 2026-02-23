@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent 像素小人 - 古风版 V2</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; background: #1a1a1a; overflow: hidden; font-family: Arial, sans-serif; }
+    #game-container { width: 800px; height: 600px; margin: 0 auto; border: 2px solid #444; }
+    #debug-info {
+      position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px;
+      font-size: 12px; font-family: monospace; max-width: 300px; border: 1px solid #0f0; border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container"></div>
+  <div id="debug-info"><div>🎮 加载中...</div><div id="debug-status"></div></div>
+
+  <script>
+    const AGENT_CONFIG = {
+      bibi: { name: '哔哔', x: 100, y: 150 },
+      lingtian: { name: '零天', x: 250, y: 150 },
+      xiayan: { name: '夏言', x: 400, y: 150 },
+      boran: { name: '博燃', x: 550, y: 150 },
+      huaxian: { name: '画仙', x: 175, y: 350 },
+      yanan: { name: '验安', x: 400, y: 350 },
+      shuxian: { name: '书仙', x: 550, y: 350 }
+    };
+
+    const config = {
+      type: Phaser.AUTO,
+      width: 800, height: 600,
+      parent: 'game-container',
+      backgroundColor: '#2d2d2d',
+      scene: { preload, create, update }
+    };
+
+    const game = new Phaser.Game(config);
+    let agents = {};
+    let debugEl = null;
+
+    function debug(msg) {
+      if (debugEl) {
+        debugEl.innerHTML += msg + '<br>';
+        debugEl.scrollTop = debugEl.scrollHeight;
+      }
+    }
+
+    function preload() {
+      debug('📦 Loading sprites...');
+      const basePath = '/pages/agents-pixel/assets/ancient-style-64';
+      const directions = ['down', 'up', 'left', 'right'];
+      
+      for (const agentId in AGENT_CONFIG) {
+        for (const dir of directions) {
+          this.load.image(agentId + '-idle-' + dir, basePath + '/' + agentId + '-idle-' + dir + '.png');
+          this.load.image(agentId + '-walk-' + dir, basePath + '/' + agentId + '-walk-' + dir + '.png');
+        }
+      }
+    }
+
+    function create() {
+      debug('🎨 Creating sprites...');
+      debugEl = document.getElementById('debug-status');
+      
+      for (const [agentId, cfg] of Object.entries(AGENT_CONFIG)) {
+        const sprite = this.add.sprite(cfg.x, cfg.y, agentId + '-idle-down');
+        sprite.setScale(2);
+        
+        const nameText = this.add.text(cfg.x, cfg.y + 50, cfg.name, {
+          fontSize: '14px', color: '#fff', stroke: '#000', strokeThickness: 3
+        }).setOrigin(0.5);
+        
+        agents[agentId] = {
+          sprite,
+          nameText,
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
+          state: 'idle',
+          dir: 'down'
+        };
+      }
+      
+      debug('✅ All agents created!');
+    }
+
+    function update() {
+      for (const [agentId, agent] of Object.entries(agents)) {
+        const moving = Math.abs(agent.vx) > 0.1 || Math.abs(agent.vy) > 0.1;
+        const newState = moving ? 'walk' : 'idle';
+        
+        // 方向检测
+        let newDir = 'down';
+        if (Math.abs(agent.vx) > Math.abs(agent.vy)) {
+          newDir = agent.vx > 0 ? 'right' : 'left';
+        } else {
+          newDir = agent.vy > 0 ? 'down' 'up';
+        }
+        
+        // 状态或方向改变时切换纹理
+        if (newState !== agent.state || newDir !== agent.dir) {
+          const newKey = agentId + '-' + newState + '-' + newDir;
+          agent.sprite.setTexture(newKey);
+          agent.state = newState;
+          agent.dir = newDir;
+          
+          debug(`${agent.name}: ${newState}-${newDir}`);
+        }
+        
+        // 随机改变方向
+        if (Math.random() < 0.02) {
+          agent.vx = (Math.random() - 0.5) * 3;
+          agent.vy = (Math.random() - 0.5) * 3;
+        }
+        
+        // 移动
+        agent.sprite.x += agent.vx;
+        agent.sprite.y += agent.vy;
+        agent.nameText.x = agent.sprite.x;
+        agent.nameText.y = agent.sprite.y + 50;
+        
+        // 边界
+        if (agent.sprite.x < 50 || agent.sprite.x > 750) agent.vx *= -1;
+        if (agent.sprite.y < 50 || agent.sprite.y > 550) agent.vy *= -1;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent 像素小人 - 古风版</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; background: #1a1a1a; overflow: hidden; }
+    #game-container { width: 800px; height: 600px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <div id="game-container"></div>
+  <script>
+    // Agent 配置
+    const AGENT_CONFIG = {
+      bibi: { name: '哔哔', x: 100, y: 150 },
+      lingtian: { name: '零天', x: 250, y: 150 },
+      xiayan: { name: '夏言', x: 400, y: 150 },
+      boran: { name: '博燃', x: 550, y: 150 },
+      huaxian: { name: '画仙', x: 175, y: 350 },
+      yanan: { name: '验安', x: 400, y: 350 },
+      shuxian: { name: '书仙', x: 550, y: 350 }
+    };
+
+    const config = {
+      type: Phaser.AUTO,
+      width: 800,
+      height: 600,
+      parent: 'game-container',
+      backgroundColor: '#2d2d2d',
+      scene: { preload, create, update }
+    };
+
+    const game = new Phaser.Game(config);
+    let agents = {};
+
+    function preload() {
+      console.log('🎮 Loading ancient-style sprites...');
+      const basePath = window.location.pathname.replace(/\/[^\/]*$/, '');
+      
+      // 加载所有图片
+      const allImages = [];
+      for (const agentId in AGENT_CONFIG) {
+        const directions = ['down', 'up', 'left', 'right'];
+        const actions = ['idle', 'walk'];
+        for (const action of actions) {
+          for (const dir of directions) {
+            allImages.push({
+              key: agentId + '-' + action + '-' + dir,
+              path: basePath + '/assets/ancient-style-64/' + agentId + '-' + action + '-' + dir + '.png'
+            });
+          }
+        }
+      }
+      
+      // 逐个加载
+      let loaded = 0;
+      allImages.forEach(img => {
+        this.load.image(img.key, img.path);
+        this.load.on('complete', () => {
+          loaded++;
+          if (loaded === allImages.length) {
+            console.log('✅ All ' + allImages.length + ' sprites loaded!');
+          }
+        });
+      });
+    }
+
+    function create() {
+      console.log('🎮 Creating sprites...');
+      document.getElementById('game-container').innerHTML = '';
+      
+      for (const [agentId, cfg] of Object.entries(AGENT_CONFIG)) {
+        const sprite = this.add.sprite(cfg.x, cfg.y, agentId + '-idle-down');
+        sprite.setScale(1.5);
+        const nameText = this.add.text(cfg.x, cfg.y + 60, cfg.name, {
+          fontSize: '14px', color: '#fff', stroke: '#000', strokeThickness: 3
+        }).setOrigin(0.5);
+        agents[agentId] = { sprite, nameText, originalX: cfg.x, originalY: cfg.y };
+      }
+      
+      console.log('✅ All agents created!');
+    }
+
+    function update() {
+      // 简单闲逛
+      for (const agent of Object.values(agents)) {
+        if (Math.random() < 0.01) {
+          agent.sprite.x += (Math.random() - 0.5) * 2;
+          agent.sprite.y += (Math.random() - 0.5) * 2;
+          agent.nameText.x = agent.sprite.x;
+          agent.nameText.y = agent.sprite.y + 60;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
